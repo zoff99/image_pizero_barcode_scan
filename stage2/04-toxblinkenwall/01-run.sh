@@ -61,12 +61,12 @@ printf 'sleep 3\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
 printf 'bash /on_every_boot.sh > /dev/null 2>/dev/null\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
-printf '(sleep 5;/home/pi/ToxBlinkenwall/toxblinkenwall/detect_usb_audio.sh) &\n' >> /etc/rc.local
+printf '(sleep 5;/home/pi/barcode_scan/detect_usb_audio.sh) &\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
 printf 'bash /set_random_passwds.sh > /dev/null 2>/dev/null &\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
 printf 'echo cpu > /sys/class/leds/led0/trigger\n' >> /etc/rc.local
-printf 'su - pi bash -c "/home/pi/ToxBlinkenwall/toxblinkenwall/initscript.sh start" > /dev/null 2>/dev/null &\n' >> /etc/rc.local
+printf 'su - pi bash -c "/home/pi/barcode_scan/initscript.sh start" > /dev/null 2>/dev/null &\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
 printf 'exit 0\n' >> /etc/rc.local
 
@@ -90,35 +90,13 @@ ls -al "${ROOTFS_DIR}/home/pi/"
 echo
 echo
 
-echo "build ToxBlinkenwall ..."
+echo "build C-Program ..."
 install -m 755 files/build_tbw.sh "${ROOTFS_DIR}/home/pi/"
-install -m 755 files/update_tbw.sh "${ROOTFS_DIR}/home/pi/"
 
 on_chroot << EOF
   chown pi:pi /home/pi/build_tbw.sh
-  chown pi:pi /home/pi/update_tbw.sh
 EOF
 
-if [ -e /pi-gen/cache/c.tgz ]; then
-   ls -al /pi-gen/cache/
-   ls -al "${ROOTFS_DIR}/home/pi/"
-   pushd "${ROOTFS_DIR}/home/pi/"
-   echo "extracting cache ..."
-   tar -xzvf /pi-gen/cache/c.tgz
-   popd
-
-on_chroot << EOF
-  id -a
-  mkdir -p "/home/pi/inst/"
-  chmod a+rwx "/home/pi/inst/"
-  touch "/home/pi/inst/__YY__"
-  chmod a+rwx "/home/pi/inst/__YY__"
-  chown pi:pi -R "/home/pi/inst/"
-  echo "build tbw WITH cache ..."
-  su - pi bash -c "/home/pi/build_tbw.sh cache"
-EOF
-
-else
 
 on_chroot << EOF
   id -a
@@ -131,19 +109,9 @@ on_chroot << EOF
   su - pi bash -c "/home/pi/build_tbw.sh"
 EOF
 
-fi
 
 _git_branch_=$(cat /pi-gen/stage3/_GIT_BRANCH_)
 echo $_git_branch_
-if [ "$_git_branch_""x" == "toxphonev20x" ]; then
-  echo "store alsa template"
-
-on_chroot << EOF
-  alsa_template="/home/pi/ToxBlinkenwall/__first_install_on_pi/alsa_template.txt"
-  cp "$alsa_template" "/home/pi/ToxBlinkenwall/toxblinkenwall/alsa_template.txt"
-EOF
-
-fi
 
 # enable sshd
 echo "enable SSHD"
@@ -154,63 +122,19 @@ EOF
 
 
 # set random passwords for "pi" and "root" user
-if [ "$_git_branch_""x" == "releasex" ]; then
-    echo "set random passwords on first boot [1]"
-    install -m 755 files/set_random_passwds.sh "${ROOTFS_DIR}/set_random_passwds.sh"
-    touch "${ROOTFS_DIR}/_first_start_"
-elif [ "$_git_branch_""x" == "toxphonev20x" ]; then
-    echo "set random passwords on first boot [2]"
-    install -m 755 files/set_random_passwds.sh "${ROOTFS_DIR}/set_random_passwds.sh"
-    touch "${ROOTFS_DIR}/_first_start_"
-else
-    echo "set random passwords on first boot [2]"
-    install -m 755 files/set_random_passwds.sh "${ROOTFS_DIR}/set_random_passwds.sh"
-    touch "${ROOTFS_DIR}/_first_start_"
-fi
+echo "set random passwords on first boot"
+install -m 755 files/set_random_passwds.sh "${ROOTFS_DIR}/set_random_passwds.sh"
+touch "${ROOTFS_DIR}/_first_start_"
 
-# save built libs and includes for caching (outside of docker)
-echo "prepare cache ..."
-mkdir -p /pi-gen/deploy/cache/
-cp -av "${ROOTFS_DIR}/home/pi/inst/" /pi-gen/deploy/cache/
-ls -al /pi-gen/deploy/cache/
-chmod -R a+r /pi-gen/deploy/cache/
-ls -al /pi-gen/deploy/cache/
-echo "... done"
+echo "using UDEV rules:plug-usb-device.rules_default"
+install -d                                 "${ROOTFS_DIR}/etc/udev/rules.d"
+install -m 644 files/plug-usb-device.rules_default "${ROOTFS_DIR}/etc/udev/rules.d/80-plug-usb-device.rules"
 
-if [ "$_git_branch_""x" == "toxphonev20x" ]; then
-  echo "using UDEV rules:plug-usb-device.rules_toxphonev20"
-  install -d                                 "${ROOTFS_DIR}/etc/udev/rules.d"
-  install -m 644 files/plug-usb-device.rules_toxphonev20 "${ROOTFS_DIR}/etc/udev/rules.d/80-plug-usb-device.rules"
-elif [ "$_git_branch_""x" == "releasex" ]; then
-  echo "using UDEV rules:plug-usb-device.rules_release"
-  install -d                                 "${ROOTFS_DIR}/etc/udev/rules.d"
-  install -m 644 files/plug-usb-device.rules_release "${ROOTFS_DIR}/etc/udev/rules.d/80-plug-usb-device.rules"
-else
-  echo "using UDEV rules:plug-usb-device.rules_default"
-  install -d                                 "${ROOTFS_DIR}/etc/udev/rules.d"
-  install -m 644 files/plug-usb-device.rules_default "${ROOTFS_DIR}/etc/udev/rules.d/80-plug-usb-device.rules"
-fi
-
-# HINT: does not work here, needs to be run on the live system (was now moved to /etc/rc.local)
-#echo "reload udevd rules"
-#on_chroot << EOF
-# systemctl restart systemd-udevd
-# systemctl daemon-reload
-#EOF
 
 # fix udev service config to be able to automount USB devices
 install -m 755 files/config_systemd_udev_srv.sh "${ROOTFS_DIR}/config_systemd_udev_srv.sh"
 on_chroot << EOF
   bash /config_systemd_udev_srv.sh
-EOF
-
-# install bcmstat from github
-on_chroot << EOF
-cd /home/pi
-mkdir -p bcmstat/
-cd bcmstat/
-wget -O bcmstat.sh https://raw.githubusercontent.com/MilhouseVH/bcmstat/0.5.1/bcmstat.sh
-chmod a+rx bcmstat.sh
 EOF
 
 # activate more locales and generate files
@@ -227,11 +151,10 @@ EOF
 
 
 # activate pi camera
-echo '' >> "${ROOTFS_DIR}/boot/config.txt"
-echo 'start_x=1' >> "${ROOTFS_DIR}/boot/config.txt"
-echo 'gpu_mem=64' >> "${ROOTFS_DIR}/boot/config.txt"
-echo '' >> "${ROOTFS_DIR}/boot/config.txt"
-
+# echo '' >> "${ROOTFS_DIR}/boot/config.txt"
+# echo 'start_x=1' >> "${ROOTFS_DIR}/boot/config.txt"
+# echo 'gpu_mem=64' >> "${ROOTFS_DIR}/boot/config.txt"
+# echo '' >> "${ROOTFS_DIR}/boot/config.txt"
 
 echo "contents of /boot/config.txt:"
 echo "---------------------------------------"
@@ -247,13 +170,6 @@ on_chroot << EOF
   # https://github.com/cdown/tzupdate
   # util to autodetect timezone from IP address
   pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate
-EOF
-echo "... ready"
-
-echo "install evdev ..."
-on_chroot << EOF
-  # install module used by "ext_keys_evdev.py" script to get keyboard input events
-  python3 -m pip install evdev || python3 -m pip install evdev || python3 -m pip install evdev || python3 -m pip install evdev || python3 -m pip install evdev || python3 -m pip install evdev
 EOF
 echo "... ready"
 ### ----- TODO: do those without pip !!!!! ---------
@@ -361,12 +277,12 @@ on_chroot << EOF
     systemctl daemon-reload || echo "ERROR"
 EOF
 
-echo 'increase network buffers'
-on_chroot << EOF
-    echo '' >> /etc/sysctl.conf
-    echo 'net.core.rmem_max=1048576' >> /etc/sysctl.conf
-    echo 'net.core.wmem_max=1048576' >> /etc/sysctl.conf
-EOF
+#echo 'increase network buffers'
+#on_chroot << EOF
+#    echo '' >> /etc/sysctl.conf
+#    echo 'net.core.rmem_max=1048576' >> /etc/sysctl.conf
+#    echo 'net.core.wmem_max=1048576' >> /etc/sysctl.conf
+#EOF
 
 echo 'blacklist bcm2835_codec module'
 # this module creates /dev/video10 /dev/video11 /dev/video12
@@ -382,7 +298,6 @@ EOF
 echo 'add some nice aliases to .bashrc'
 on_chroot << EOF
     echo '' >> /home/pi/.bashrc
-    echo "alias 'tu'='tail -F -n400 ~/ToxBlinkenwall/toxblinkenwall/toxblinkenwall.log'" >> /home/pi/.bashrc
     echo "alias 'nn'='speedometer  -l  -r wlan0 -t wlan0 -m \$(( 1024 * 1024 * 3 / 2 ))'" >> /home/pi/.bashrc
     echo "alias 'nn1'='speedometer  -l  -r eth0 -t eth0 -m \$(( 1024 * 1024 * 3 / 2 ))'" >> /home/pi/.bashrc
     chown pi:pi /home/pi/.bashrc
