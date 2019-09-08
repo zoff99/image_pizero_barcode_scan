@@ -18,7 +18,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: tbw-library-dependencies-v13-{{ .Branch }}
+          key: xx-dependencies-v14-{{ .Branch }}
       - run: sudo pkill apt-get || echo dummy
       - run: apt --version
       - run: sudo apt update &&
@@ -69,7 +69,7 @@ jobs:
 
       - save_cache:
           paths: [ "~/work/cache" ]
-          key: tbw-library-dependencies-v13-{{ .Branch }}
+          key: xx-dependencies-v14-{{ .Branch }}
 
       - store_artifacts:
           path: ~/work/pi-gen/deploy2
