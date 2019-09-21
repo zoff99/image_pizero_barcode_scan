@@ -65,7 +65,6 @@ printf '(sleep 5;/home/pi/barcode_scan/detect_usb_audio.sh) &\n' >> /etc/rc.loca
 printf '\n' >> /etc/rc.local
 printf 'bash /set_random_passwds.sh > /dev/null 2>/dev/null &\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
-printf 'echo cpu > /sys/class/leds/led0/trigger\n' >> /etc/rc.local
 printf 'su - pi bash -c "/home/pi/barcode_scan/initscript.sh start" > /dev/null 2>/dev/null &\n' >> /etc/rc.local
 printf '\n' >> /etc/rc.local
 printf 'exit 0\n' >> /etc/rc.local
