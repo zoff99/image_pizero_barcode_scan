@@ -16,15 +16,14 @@ rm -f /tmp/tmp.txt
 mkdir -p /home/pi/barcode_scan/db/
 
 # now mount
-sudo mount -t ecryptfs /home/pi/barcode_scan/db /home/pi/barcode_scan/db -o key=passphrase:passphrase_passwd_file=/tmp/key.txt,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough=no,ecryptfs_enable_filename_crypto=yes,no_sig_cache,ecryptfs_fnek_sig=${sig},ecryptfs_sig=${sig},ecryptfs_unlink_sigs > /dev/null 2>&1
-res=$?
-
-if [ $res == 0 ]; then
+# sudo mount -t ecryptfs /home/pi/barcode_scan/db /home/pi/barcode_scan/db -o key=passphrase:passphrase_passwd_file=/tmp/key.txt,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough=no,ecryptfs_enable_filename_crypto=yes,no_sig_cache,ecryptfs_fnek_sig=${sig},ecryptfs_sig=${sig},ecryptfs_unlink_sigs > /dev/null 2>&1
+# res=$?
+#
+#if [ $res == 0 ]; then
     chown pi:pi /home/pi/barcode_scan/db/
-else
-    echo "ERROR mounting encrypted storage dir"
-fi
+#else
+#    echo "ERROR mounting encrypted storage dir"
+#fi
 
 rm -rf /tmp/key.txt
-
 
