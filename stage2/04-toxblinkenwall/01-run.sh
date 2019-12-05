@@ -160,23 +160,6 @@ echo "---------------------------------------"
 cat "${ROOTFS_DIR}/boot/config.txt"
 echo "---------------------------------------"
 
-### ----- TODO: do those without pip !!!!! ---------
-### ----- TODO: do those without pip !!!!! ---------
-### ----- TODO: do those without pip !!!!! ---------
-### ----- TODO: do those without pip !!!!! ---------
-echo "install tzupdate ..."
-on_chroot << EOF
-  # https://github.com/cdown/tzupdate
-  # util to autodetect timezone from IP address
-  pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate || pip install -U tzupdate
-EOF
-echo "... ready"
-### ----- TODO: do those without pip !!!!! ---------
-### ----- TODO: do those without pip !!!!! ---------
-### ----- TODO: do those without pip !!!!! ---------
-### ----- TODO: do those without pip !!!!! ---------
-
-
 echo "enable reboot on kernel crash"
 sed -i -e 's_.*CrashReboot.*__' "${ROOTFS_DIR}/etc/systemd/system.conf"
 sed -i -e 's_.*RuntimeWatchdogSec.*__' "${ROOTFS_DIR}/etc/systemd/system.conf"
