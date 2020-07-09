@@ -3,7 +3,7 @@
 ```
 git clone https://github.com/zoff99/image_pizero_barcode_scan
 cd image_pizero_barcode_scan/
-run ./vagrant_build.sh
+./vagrant_build.sh
 ```
 
 <b>download the latest image from circleCI:</b>
